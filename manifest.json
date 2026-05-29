@@ -1,7 +1,7 @@
 {
   "id": "obsidian-kanban-codex",
   "name": "Kanban Codex",
-  "version": "2.0.53",
+  "version": "2.0.54",
   "minAppVersion": "1.0.0",
   "description": "Customized markdown-backed Kanban boards in Obsidian, based on obsidian-kanban.",
   "author": "mgmeyers",

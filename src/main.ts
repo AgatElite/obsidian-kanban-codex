@@ -211,8 +211,11 @@ export default class KanbanPlugin extends Plugin {
 
   addView(view: KanbanView, data: string, shouldParseData: boolean) {
     const win = view.getWindow();
-    const reg = this.windowRegistry.get(win);
+    if (!this.windowRegistry.has(win)) {
+      this.mount(win);
+    }
 
+    const reg = this.windowRegistry.get(win);
     if (!reg) return;
     if (!reg.viewMap.has(view.id)) {
       reg.viewMap.set(view.id, view);

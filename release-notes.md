@@ -1,5 +1,4 @@
-2.0.53
+2.0.54
 
-- Restore the fork as a source-backed build based on upstream 2.0.51.
-- Preserve Kanban Codex list checkbox, archive-on-check, direct archive, and single-click edit behavior.
-- Reduce unnecessary board refreshes for unrelated metadata changes.
+- Fix Open Kanban Note opening a board as a blank view until switching away and back.
+- Ensure Kanban views register their window mount before rendering when opened from an Obsidian URI.
