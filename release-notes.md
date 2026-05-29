@@ -1,4 +1,5 @@
-2.0.54
+2.0.55
 
-- Fix Open Kanban Note opening a board as a blank view until switching away and back.
-- Ensure Kanban views register their window mount before rendering when opened from an Obsidian URI.
+- Fix Open Kanban Note opening a blank Kanban view after Obsidian restart.
+- Register already-loaded Kanban file data during view load when Obsidian opens a view before calling setViewData.
+- Resync the Kanban portal host with currently registered views when it subscribes.

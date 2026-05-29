@@ -200,6 +200,7 @@ export default class KanbanPlugin extends Plugin {
       const reg = this.windowRegistry.get(win);
 
       reg?.viewStateReceivers.push(setState);
+      setState(this.getKanbanViews(win));
 
       return () => {
         reg?.viewStateReceivers.remove(setState);

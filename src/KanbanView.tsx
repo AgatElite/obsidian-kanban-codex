@@ -173,6 +173,18 @@ export class KanbanView extends TextFileView implements HoverParent {
       });
     }
 
+    const win = this.getWindow();
+    const registerLoadedDataTimeout = win.setTimeout(() => {
+      const stateManager = this.file && this.plugin.getStateManager(this.file);
+      const viewRegistered = !!this.plugin.getKanbanView(this.id, win);
+
+      if (this.file && this.data && hasFrontmatterKeyRaw(this.data) && (!stateManager || !viewRegistered)) {
+        this.plugin.addView(this, this.data, !stateManager);
+      }
+    });
+
+    this.register(() => win.clearTimeout(registerLoadedDataTimeout));
+
     this.register(
       this.containerEl.onWindowMigrated(() => {
         this.plugin.removeView(this);
