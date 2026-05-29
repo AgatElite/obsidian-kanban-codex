@@ -1,4 +1,4 @@
-2.0.58
+2.0.59
 
-- Fix cropped card checkboxes on mobile, especially on multiline cards.
-- Keep the checkbox column inside the rounded card with a stable touch-sized slot.
+- Reduce mobile Kanban card corner radius to better match the desktop card shape.
+- Preserve the mobile checkbox alignment fix inside the less-rounded card.
