@@ -1,5 +1,4 @@
-2.0.57
+2.0.58
 
-- Fix blank/cloned cards caused by duplicate item ids after editing duplicate card text.
-- Ensure every rendered card has a unique in-memory id even when multiple cards have identical text.
-- Prevent a click-away edit from completing more than once in the same edit session.
+- Fix cropped card checkboxes on mobile, especially on multiline cards.
+- Keep the checkbox column inside the rounded card with a stable touch-sized slot.
