@@ -4,7 +4,7 @@ import { useEffect, useState } from 'preact/compat';
 
 import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
-import { getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
+import { generateInstanceId, getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
 import { Board, BoardTemplate, Item } from './components/types';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
@@ -129,6 +129,52 @@ export class StateManager {
     });
   }
 
+  ensureUniqueItemIds(board: Board): Board {
+    const seen = new Set<string>();
+    let didChange = false;
+
+    const children = board.children.map((lane) => {
+      let laneDidChange = false;
+      const laneChildren = lane.children.map((item) => {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          return item;
+        }
+
+        didChange = true;
+        laneDidChange = true;
+
+        let id = generateInstanceId();
+        while (seen.has(id)) {
+          id = generateInstanceId();
+        }
+        seen.add(id);
+
+        return update(item, {
+          id: {
+            $set: id,
+          },
+        });
+      });
+
+      if (!laneDidChange) return lane;
+
+      return update(lane, {
+        children: {
+          $set: laneChildren,
+        },
+      });
+    });
+
+    if (!didChange) return board;
+
+    return update(board, {
+      children: {
+        $set: children,
+      },
+    });
+  }
+
   forceRefresh() {
     if (this.state) {
       try {
@@ -150,7 +196,7 @@ export class StateManager {
   setState(state: Board | ((board: Board) => Board), shouldSave: boolean = true) {
     try {
       const oldSettings = this.state?.data.settings;
-      const newState = typeof state === 'function' ? state(this.state) : state;
+      const newState = this.ensureUniqueItemIds(typeof state === 'function' ? state(this.state) : state);
       const newSettings = newState?.data.settings;
       const didSettingsChange = oldSettings !== newSettings;
 

@@ -193,9 +193,13 @@ export const ItemContent = memo(function ItemContent({
   const titleRef = useRef<string | null>(null);
   const editorRef = useRef<EditorView>();
   const path = useNestedEntityPath();
+  const didCompleteRef = useRef(false);
 
   const completeEdit = useCallback(
     (cm?: EditorView) => {
+      if (didCompleteRef.current) return;
+      didCompleteRef.current = true;
+
       const title = cm?.state.doc.toString().trim() ?? titleRef.current;
 
       if (title !== null) {
@@ -209,6 +213,10 @@ export const ItemContent = memo(function ItemContent({
   );
 
   useEffect(() => {
+    if (isEditing(editState)) {
+      didCompleteRef.current = false;
+    }
+
     if (editState === EditingState.complete) {
       completeEdit(editorRef.current);
       titleRef.current = null;

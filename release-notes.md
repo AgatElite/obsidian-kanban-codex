@@ -1,7 +1,5 @@
-2.0.56
+2.0.57
 
-- Fix shortcut-opened Kanban notes staying blank when the Kanban note was active before quitting Obsidian.
-- Restore visible per-list controls for showing card checkboxes and archiving checked cards.
-- Save card edits when clicking away instead of cancelling them.
-- Harden mobile loading and editor fallback behavior.
-- Rename the visible plugin title to Kanban.
+- Fix blank/cloned cards caused by duplicate item ids after editing duplicate card text.
+- Ensure every rendered card has a unique in-memory id even when multiple cards have identical text.
+- Prevent a click-away edit from completing more than once in the same edit session.
