@@ -1,0 +1,5 @@
+.DS_Store
+data.json
+*.before-*
+*.codex-kanban-custom
+reapply-codex-kanban-customizations.sh
