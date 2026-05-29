@@ -191,28 +191,41 @@ export const ItemContent = memo(function ItemContent({
   const { stateManager, filePath, boardModifiers } = useContext(KanbanContext);
   const getDateColor = useGetDateColorFn(stateManager);
   const titleRef = useRef<string | null>(null);
+  const editorRef = useRef<EditorView>();
+  const path = useNestedEntityPath();
+
+  const completeEdit = useCallback(
+    (cm?: EditorView) => {
+      const title = cm?.state.doc.toString().trim() ?? titleRef.current;
+
+      if (title !== null) {
+        boardModifiers.updateItem(path, stateManager.updateItemContent(item, title));
+      }
+
+      titleRef.current = null;
+      setEditState(EditingState.cancel);
+    },
+    [boardModifiers, item, path, stateManager]
+  );
 
   useEffect(() => {
     if (editState === EditingState.complete) {
-      if (titleRef.current !== null) {
-        boardModifiers.updateItem(path, stateManager.updateItemContent(item, titleRef.current));
-      }
+      completeEdit(editorRef.current);
       titleRef.current = null;
     } else if (editState === EditingState.cancel) {
       titleRef.current = null;
     }
-  }, [editState, stateManager, item]);
+  }, [editState, stateManager, item, completeEdit]);
 
-  const path = useNestedEntityPath();
   const { onEditDate, onEditTime } = useDatePickers(item);
   const onEnter = useCallback(
     (cm: EditorView, mod: boolean, shift: boolean) => {
       if (!allowNewLine(stateManager, mod, shift)) {
-        setEditState(EditingState.complete);
+        completeEdit(cm);
         return true;
       }
     },
-    [stateManager]
+    [stateManager, completeEdit]
   );
 
   const onWrapperClick = useCallback(
@@ -228,7 +241,7 @@ export const ItemContent = memo(function ItemContent({
     [onEditDate, onEditTime]
   );
 
-  const onSubmit = useCallback(() => setEditState(EditingState.complete), []);
+  const onSubmit = useCallback((cm: EditorView) => completeEdit(cm), [completeEdit]);
 
   const onEscape = useCallback(() => {
     setEditState(EditingState.cancel);
@@ -258,11 +271,13 @@ export const ItemContent = memo(function ItemContent({
     return (
       <div className={c('item-input-wrapper')}>
         <MarkdownEditor
+          editorRef={editorRef}
           editState={editState}
           className={c('item-input')}
           onEnter={onEnter}
           onEscape={onEscape}
           onSubmit={onSubmit}
+          onBlur={completeEdit}
           value={item.data.titleRaw}
           onChange={(update) => {
             if (update.docChanged) {

@@ -20,6 +20,7 @@ interface MarkdownEditorProps {
   onEnter: (cm: EditorView, mod: boolean, shift: boolean) => boolean;
   onEscape: (cm: EditorView) => void;
   onSubmit: (cm: EditorView) => void;
+  onBlur?: (cm: EditorView) => void;
   onPaste?: (e: ClipboardEvent, cm: EditorView) => void;
   onChange?: (update: ViewUpdate) => void;
   value?: string;
@@ -95,12 +96,31 @@ function getVimPlugin(cm: EditorView): string {
   })?.value?.cm;
 }
 
+function getTextareaEditor(textarea: HTMLTextAreaElement): EditorView {
+  return {
+    state: {
+      doc: {
+        length: textarea.value.length,
+        toString: () => textarea.value,
+      },
+    },
+    dispatch: ({ changes }: any) => {
+      if (!changes) return;
+      textarea.value =
+        textarea.value.slice(0, changes.from) +
+        (changes.insert || '') +
+        textarea.value.slice(changes.to);
+    },
+  } as EditorView;
+}
+
 export function MarkdownEditor({
   editorRef,
   onEnter,
   onEscape,
   onChange,
   onPaste,
+  onBlur,
   className,
   onSubmit,
   editState,
@@ -109,9 +129,12 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const { view, stateManager } = useContext(KanbanContext);
   const elRef = useRef<HTMLDivElement>();
+  const textareaRef = useRef<HTMLTextAreaElement>();
   const internalRef = useRef<EditorView>();
 
   useEffect(() => {
+    if (!view.plugin.MarkdownEditor) return;
+
     class Editor extends view.plugin.MarkdownEditor {
       isKanbanEditor = true;
 
@@ -148,16 +171,17 @@ export function MarkdownEditor({
                 evt.win.setTimeout(() => {
                   this.app.workspace.activeEditor = this.owner;
                   if (Platform.isMobile) {
-                    this.app.mobileToolbar.update();
+                    this.app.mobileToolbar?.update();
                   }
                 });
                 return true;
               },
-              blur: () => {
+              blur: (_evt, cm) => {
                 if (Platform.isMobile) {
                   view.contentEl.removeClass('is-mobile-editing');
-                  this.app.mobileToolbar.update();
+                  this.app.mobileToolbar?.update();
                 }
+                onBlur?.(cm);
                 return true;
               },
             })
@@ -256,7 +280,7 @@ export function MarkdownEditor({
 
         if (app.workspace.activeEditor === controller) {
           app.workspace.activeEditor = null;
-          (app as any).mobileToolbar.update();
+          (app as any).mobileToolbar?.update();
           view.contentEl.removeClass('is-mobile-editing');
         }
       }
@@ -268,6 +292,49 @@ export function MarkdownEditor({
 
   const cls = ['cm-table-widget'];
   if (className) cls.push(className);
+
+  if (!view.plugin.MarkdownEditor) {
+    const submit = () => {
+      if (textareaRef.current) {
+        onSubmit(getTextareaEditor(textareaRef.current));
+      }
+    };
+
+    return (
+      <>
+        <textarea
+          ref={(el) => {
+            textareaRef.current = el;
+            if (el && editorRef) {
+              editorRef.current = getTextareaEditor(el);
+            }
+          }}
+          className={classcat(cls)}
+          placeholder={placeholder}
+          defaultValue={value || ''}
+          onInput={(e) => {
+            const textarea = e.currentTarget as HTMLTextAreaElement;
+            if (editorRef) {
+              editorRef.current = getTextareaEditor(textarea);
+            }
+            onChange?.({
+              docChanged: true,
+              state: { doc: { toString: () => textarea.value } },
+            } as ViewUpdate);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              onEscape(getTextareaEditor(e.currentTarget as HTMLTextAreaElement));
+            }
+          }}
+          onBlur={(e) => onBlur?.(getTextareaEditor(e.currentTarget as HTMLTextAreaElement))}
+        />
+        <button onClick={submit} className={classcat([c('item-submit-button'), 'mod-cta'])}>
+          {t('Submit')}
+        </button>
+      </>
+    );
+  }
 
   return (
     <>

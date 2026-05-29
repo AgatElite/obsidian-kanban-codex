@@ -28,21 +28,28 @@ interface WindowRegistry {
 }
 
 function getEditorClass(app: any) {
-  const md = app.embedRegistry.embedByExtension.md(
-    { app: app, containerEl: createDiv(), state: {} },
-    null,
-    ''
-  );
+  try {
+    const containerEl = activeDocument.body.createDiv();
+    const md = app.embedRegistry.embedByExtension.md(
+      { app: app, containerEl, state: {} },
+      null,
+      ''
+    );
 
-  md.load();
-  md.editable = true;
-  md.showEditor();
+    md.load();
+    md.editable = true;
+    md.showEditor();
 
-  const MarkdownEditor = Object.getPrototypeOf(Object.getPrototypeOf(md.editMode)).constructor;
+    const MarkdownEditor = Object.getPrototypeOf(Object.getPrototypeOf(md.editMode)).constructor;
 
-  md.unload();
+    md.unload();
+    containerEl.remove();
 
-  return MarkdownEditor;
+    return MarkdownEditor;
+  } catch (e) {
+    console.error('Kanban: could not initialize markdown editor', e);
+    return null;
+  }
 }
 
 export default class KanbanPlugin extends Plugin {
@@ -141,6 +148,16 @@ export default class KanbanPlugin extends Plugin {
       this.mount(c.win);
     });
 
+    this.app.workspace.onLayoutReady(() => {
+      this._loaded = true;
+      this.reconcileKanbanViews();
+    });
+
+    this.registerEvent(this.app.workspace.on('layout-change', () => this.reconcileKanbanViews()));
+    this.registerEvent(
+      this.app.workspace.on('active-leaf-change', () => this.reconcileKanbanViews())
+    );
+
     this.registerDomEvent(window, 'keydown', this.handleShift);
     this.registerDomEvent(window, 'keyup', this.handleShift);
 
@@ -191,6 +208,18 @@ export default class KanbanPlugin extends Plugin {
     }
 
     return this.stateManagers.get(view.file);
+  }
+
+  reconcileKanbanViews() {
+    this.app.workspace.getLeavesOfType(kanbanViewType).forEach((leaf) => {
+      if (leaf.view instanceof KanbanView) {
+        leaf.view.registerLoadedData();
+      }
+    });
+  }
+
+  deferReconcileKanbanViews() {
+    activeWindow.setTimeout(() => this.reconcileKanbanViews());
   }
 
   useKanbanViews(win: Window): KanbanView[] {
@@ -785,6 +814,8 @@ export default class KanbanPlugin extends Plugin {
 
         setViewState(next) {
           return function (state: ViewState, ...rest: any[]) {
+            let nextState = state;
+
             if (
               // Don't force kanban mode during shutdown
               self._loaded &&
@@ -799,18 +830,22 @@ export default class KanbanPlugin extends Plugin {
 
               if (cache?.frontmatter && cache.frontmatter[frontmatterKey]) {
                 // If we have it, force the view type to kanban
-                const newState = {
+                nextState = {
                   ...state,
                   type: kanbanViewType,
                 };
 
                 self.kanbanFileModes[state.state.file] = kanbanViewType;
-
-                return next.apply(this, [newState, ...rest]);
               }
             }
 
-            return next.apply(this, [state, ...rest]);
+            const result = next.apply(this, [nextState, ...rest]);
+
+            if (nextState.type === kanbanViewType || nextState.state?.file) {
+              Promise.resolve(result).finally(() => self.deferReconcileKanbanViews());
+            }
+
+            return result;
           };
         },
       })

@@ -97,6 +97,34 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       })
       .addItem((item) => {
         item
+          .setIcon('lucide-check-square')
+          .setTitle(t('Show card checkboxes'))
+          .setChecked(!!lane.data.showCheckboxes)
+          .onClick(() =>
+            boardModifiers.updateLane(
+              path,
+              update(lane, {
+                data: { $toggle: ['showCheckboxes'] },
+              })
+            )
+          );
+      })
+      .addItem((item) => {
+        item
+          .setIcon('lucide-archive')
+          .setTitle(t('Archive checked cards'))
+          .setChecked(!!lane.data.archiveOnCheck)
+          .onClick(() =>
+            boardModifiers.updateLane(
+              path,
+              update(lane, {
+                data: { $toggle: ['archiveOnCheck'] },
+              })
+            )
+          );
+      })
+      .addItem((item) => {
+        item
           .setIcon('lucide-archive')
           .setTitle(t('Archive cards'))
           .onClick(() => setConfirmAction('archive-items'));

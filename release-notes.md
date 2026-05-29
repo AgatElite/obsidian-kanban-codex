@@ -1,5 +1,7 @@
-2.0.55
+2.0.56
 
-- Fix Open Kanban Note opening a blank Kanban view after Obsidian restart.
-- Register already-loaded Kanban file data during view load when Obsidian opens a view before calling setViewData.
-- Resync the Kanban portal host with currently registered views when it subscribes.
+- Fix shortcut-opened Kanban notes staying blank when the Kanban note was active before quitting Obsidian.
+- Restore visible per-list controls for showing card checkboxes and archiving checked cards.
+- Save card edits when clicking away instead of cancelling them.
+- Harden mobile loading and editor fallback behavior.
+- Rename the visible plugin title to Kanban.

@@ -76,7 +76,7 @@ const ItemInner = memo(function ItemInner({
   const clickOutsideRef = useOnclickOutside(
     () => {
       if (isEditing(editState)) {
-        setEditState(EditingState.cancel);
+        setEditState(EditingState.complete);
       }
     },
     {

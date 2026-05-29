@@ -148,6 +148,16 @@ export class KanbanView extends TextFileView implements HoverParent {
     return getParentWindow(this.containerEl) as Window & typeof globalThis;
   }
 
+  registerLoadedData() {
+    const win = this.getWindow();
+    const stateManager = this.file && this.plugin.getStateManager(this.file);
+    const viewRegistered = !!this.plugin.getKanbanView(this.id, win);
+
+    if (this.file && this.data && hasFrontmatterKeyRaw(this.data) && (!stateManager || !viewRegistered)) {
+      this.plugin.addView(this, this.data, !stateManager);
+    }
+  }
+
   async loadFile(file: TFile) {
     this.plugin.removeView(this);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -157,7 +167,9 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   async onLoadFile(file: TFile) {
     try {
-      return await super.onLoadFile(file);
+      const result = await super.onLoadFile(file);
+      this.registerLoadedData();
+      return result;
     } catch (e) {
       const stateManager = this.plugin.stateManagers.get(this.file);
       stateManager?.setError(e);
@@ -169,18 +181,13 @@ export class KanbanView extends TextFileView implements HoverParent {
     super.onload();
     if (Platform.isMobile) {
       this.containerEl.setCssProps({
-        '--mobile-navbar-height': (this.app as any).mobileNavbar.containerEl.clientHeight + 'px',
+        '--mobile-navbar-height': ((this.app as any).mobileNavbar?.containerEl?.clientHeight || 0) + 'px',
       });
     }
 
     const win = this.getWindow();
     const registerLoadedDataTimeout = win.setTimeout(() => {
-      const stateManager = this.file && this.plugin.getStateManager(this.file);
-      const viewRegistered = !!this.plugin.getKanbanView(this.id, win);
-
-      if (this.file && this.data && hasFrontmatterKeyRaw(this.data) && (!stateManager || !viewRegistered)) {
-        this.plugin.addView(this, this.data, !stateManager);
-      }
+      this.registerLoadedData();
     });
 
     this.register(() => win.clearTimeout(registerLoadedDataTimeout));
