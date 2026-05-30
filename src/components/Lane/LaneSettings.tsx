@@ -37,14 +37,7 @@ export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
       <div className={c('checkbox-wrapper')}>
         <div className={c('checkbox-label')}>{t('Archive checked cards')}</div>
         <div
-          onClick={() =>
-            boardModifiers.updateLane(
-              lanePath,
-              update(lane, {
-                data: { $toggle: ['archiveOnCheck'] },
-              })
-            )
-          }
+          onClick={() => boardModifiers.toggleLaneArchiveOnCheck(lanePath)}
           className={`checkbox-container ${lane.data.archiveOnCheck ? 'is-enabled' : ''}`}
         />
       </div>

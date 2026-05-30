@@ -16,6 +16,7 @@ import {
 
 import { generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
+import { getTaskStatusDone } from '../parsers/helpers/inlineMetadata';
 
 export interface BoardModifiers {
   appendItems: (path: Path, items: Item[]) => void;
@@ -28,6 +29,7 @@ export interface BoardModifiers {
   addLane: (lane: Lane) => void;
   insertLane: (path: Path, lane: Lane) => void;
   updateLane: (path: Path, lane: Lane) => void;
+  toggleLaneArchiveOnCheck: (path: Path) => void;
   archiveLane: (path: Path) => void;
   archiveLaneItems: (path: Path) => void;
   deleteEntity: (path: Path) => void;
@@ -134,6 +136,58 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           },
         })
       );
+    },
+
+    toggleLaneArchiveOnCheck: (path: Path) => {
+      stateManager.setState((boardData) => {
+        const lane = getEntityFromPath(boardData, path);
+        const shouldArchiveChecked = !lane.data.archiveOnCheck;
+
+        const nextLane = update(lane, {
+          data: { $toggle: ['archiveOnCheck'] },
+        });
+
+        if (!shouldArchiveChecked) {
+          return updateParentEntity(boardData, path, {
+            children: {
+              [path[path.length - 1]]: {
+                $set: nextLane,
+              },
+            },
+          });
+        }
+
+        const archived: Item[] = [];
+        const activeItems = nextLane.children.filter((item) => {
+          const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
+          if (isComplete) archived.push(item);
+          return !isComplete;
+        });
+
+        const updatedBoard = updateParentEntity(boardData, path, {
+          children: {
+            [path[path.length - 1]]: {
+              $set: update(nextLane, {
+                children: {
+                  $set: activeItems,
+                },
+              }),
+            },
+          },
+        });
+
+        if (!archived.length) return updatedBoard;
+
+        return update(updatedBoard, {
+          data: {
+            archive: {
+              $push: stateManager.getSetting('archive-with-date')
+                ? archived.map(appendArchiveDate)
+                : archived,
+            },
+          },
+        });
+      });
     },
 
     archiveLane: (path: Path) => {

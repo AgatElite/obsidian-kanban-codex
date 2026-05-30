@@ -114,14 +114,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .setIcon('lucide-archive')
           .setTitle(t('Archive checked cards'))
           .setChecked(!!lane.data.archiveOnCheck)
-          .onClick(() =>
-            boardModifiers.updateLane(
-              path,
-              update(lane, {
-                data: { $toggle: ['archiveOnCheck'] },
-              })
-            )
-          );
+          .onClick(() => boardModifiers.toggleLaneArchiveOnCheck(path));
       })
       .addItem((item) => {
         item

@@ -1,4 +1,4 @@
-2.0.59
+2.0.60
 
-- Reduce mobile Kanban card corner radius to better match the desktop card shape.
-- Preserve the mobile checkbox alignment fix inside the less-rounded card.
+- Archive already-checked cards immediately when enabling a list's "Archive checked cards" option.
+- Keep disabling the option as a settings-only change without moving cards.
